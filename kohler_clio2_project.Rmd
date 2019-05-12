@@ -6,12 +6,9 @@ author:
   - name: Michael kohler
     url: http://michaelskohler.com/personal_website/index.html
 date: "`r Sys.Date()`"
+bibliography: bib.bib
 output: distill::distill_article
 ---
-here's some stuff I wrote
-
-
-
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = FALSE)
 
@@ -27,8 +24,6 @@ library(distill)
 pop_1850 <- read_csv("mapping_files/pop_1850.csv")
 total_1860 <- read_csv("mapping_files/total_1860.csv")
 race_1860 <- read_csv("mapping_files/race_1860.csv")
-race_1870 <- read_csv("mapping_files/race_1870.csv")
-total_1870 <- read.csv("mapping_files/total_1870.csv")
 election_1860 <- read.csv("mapping_files/1860_election_returns.csv")
 
 
@@ -58,18 +53,6 @@ VA_pop_1860 <- race_1860 %>%
            total_black,
            free_black,
            total_slave,
-           total_white) %>% 
-  filter(state == "Virginia")
-
-VA_pop_1870 <- race_1870 %>% 
-  left_join(total_1870) %>% 
-  rowwise() %>%
-  select(state = STATE,
-           county = COUNTY,
-           year = YEAR,
-           full_name,
-           total_pops = total_population,
-           total_black = free_black,
            total_white) %>% 
   filter(state == "Virginia")
 
@@ -108,21 +91,98 @@ VA_shapes <- counties_va_1860 %>%
 
 scale_range <- c(1.5, -1.5)
 
-slave_per_colors <- colorNumeric("RdBu", domain = scale_range)
+slave_dif_colors <- colorNumeric("RdBu", domain = scale_range)
+slave_per_colors <- colorNumeric(palette = "Purples", domain = VA_data$percent_slave_1860)
 bell_per_colors <- colorNumeric(palette = "Oranges", domain = VA_data$bell_pct)
 breck_per_colors <- colorNumeric(palette = "Greens", domain = VA_data$breckinridge_pct)
 doug_per_colors <- colorNumeric(palette = "Blues", domain = VA_data$douglas_pct)
 linc_per_colors <- colorNumeric(palette = "Reds", domain = VA_data$lincoln_pct)
+```
+
+  Indeed, soon after Virginia seceded and effectively joined the Confederacy on April 17th, 1861, one of the first actions done by the secessionist government was to send state militia to secure various strategic areas in Northwestern Virginia. On May 3rd the secessionist governorsent militia units to the strategic rail hub of Grafton (now in Taylor County, WV), with other units being sent to secure Charleston and Harper's Ferry, including troops commanded by the soon-to-be-famous Thomas J. Jackson (himself a Northwesterner from what is now Clarksburg, WV).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r, fig.cap="Slave Population by County"}
 
 leaflet(VA_shapes) %>% 
   addTiles() %>% 
-  addPolygons(fillColor = ~slave_per_colors(diff_percent),
+  addPolygons(fillColor = ~slave_per_colors(percent_slave_1860),
               fillOpacity = 1,
               color = "black", weight = 1,
               label = ~county,
-              popup = ~paste0(county, ": ", 100 * diff_percent, "%")) %>% 
-  addLegend("bottomright", pal = slave_per_colors, values = scale_range,
-    title = "Change in Slave Population, 1850-1860",
+              popup = ~paste0(county, " County: ", 100 * percent_slave_1860, "% enslaved")) %>% 
+  addLegend("bottomright", pal = slave_per_colors, values = VA_data$percent_slave_1860,
+    title = "",
+    labFormat = labelFormat(suffix = "%",
+                            transform = function(x) {x * 100}),
+    opacity = 1
+  )
+
+
+```
+
+```{r, fig.cap="Votes for Lincoln in 1860 in Virginia"}
+
+centroids_va_1860 <- counties_va_1860 %>%
+  st_centroid()
+
+VA_points <- centroids_va_1860 %>% 
+  left_join(VA_data, by = "full_name") %>% 
+  filter(lincoln > 0)
+
+pop_scale <- function(x, max_radius = 20) {
+  x %>% 
+    sqrt() %>% 
+    scales::rescale_max(to = c(0, max_radius))
+}
+
+leaflet(VA_points) %>% 
+  addTiles() %>% 
+  addCircleMarkers(radius = ~pop_scale(lincoln),
+                   label = ~county,
+                   popup = ~paste0(county, " County: ", lincoln, " votes"),
+                   color = "red")
+
+```
+
+
+```{r, fig.cap="Change in Slave Population, 1850-1860"}
+knitr::opts_chunk$set(echo = FALSE)
+
+leaflet(VA_shapes) %>% 
+  addTiles() %>% 
+  addPolygons(fillColor = ~slave_dif_colors(diff_percent),
+              fillOpacity = 1,
+              color = "black", weight = 1,
+              label = ~county,
+              popup = ~paste0(county, " County: ", 100 * diff_percent, "%, a change of ", slave_diff, " slaves")) %>% 
+  addLegend("bottomright", pal = slave_dif_colors, values = scale_range,
+    title = "",
     labFormat = labelFormat(suffix = "%",
                             transform = function(x) {x * 100}),
     opacity = 1
@@ -131,7 +191,7 @@ leaflet(VA_shapes) %>%
 More stuff.
 
 
-```{r Bell_map, include=TRUE}
+```{r, layout="1-page",fig.cap="Votes for John Bell (Constitutional Union Party) in 1860 in Virginia"}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -140,16 +200,16 @@ leaflet(VA_shapes) %>%
               fillOpacity = 1,
               color = "black", weight = 1,
               label = ~county,
-              popup = ~paste0(county, ": ", bell, " votes, ", 100 * bell_pct, "%")) %>% 
+              popup = ~paste0(county, " County: ", bell, " votes, ", 100 * bell_pct, "%")) %>% 
   addLegend("bottomright", pal = bell_per_colors, values = VA_data$bell_pct,
-    title = "John Bell (Constitutional Union) votes in Virginia, 1860 Presidential Election",
+    title = "Bell",
     labFormat = labelFormat(suffix = "%",
                             transform = function(x) {x * 100}),
     opacity = 1
   )
 ```
 
-```{r Breck_map, include=TRUE}
+```{r, fig.cap="Votes for John C. Breckinridge (Southern Democratic Party) in 1860 in Virginia"}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -158,16 +218,16 @@ leaflet(VA_shapes) %>%
               fillOpacity = 1,
               color = "black", weight = 1,
               label = ~county,
-              popup = ~paste0(county, ": ", breckinridge, " votes, ", 100 * breckinridge_pct, "%")) %>% 
+              popup = ~paste0(county, " County: ", breckinridge, " votes, ", 100 * breckinridge_pct, "%")) %>% 
   addLegend("bottomright", pal = breck_per_colors, values = VA_data$breckinridge_pct,
-    title = "John C. Breckinridge (Southern Democratic) votes in Virginia, 1860 Presidential Election",
+    title = "Breckinridge",
     labFormat = labelFormat(suffix = "%",
                             transform = function(x) {x * 100}),
     opacity = 1
   )
 ```
 
-```{r douglas_map, include=TRUE}
+```{r, fig.cap="Votes for Steven A. Douglas (Democratic Party) in 1860 in Virginia"}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -176,16 +236,16 @@ leaflet(VA_shapes) %>%
               fillOpacity = 1,
               color = "black", weight = 1,
               label = ~county,
-              popup = ~paste0(county, ": ", douglas, " votes, ", 100 * douglas_pct, "%")) %>% 
+              popup = ~paste0(county, " County: ", douglas, " votes, ", 100 * douglas_pct, "%")) %>% 
   addLegend("bottomright", pal = doug_per_colors, values = VA_data$douglas_pct,
-    title = "Steven A. Douglas (Democratic) votes in Virginia, 1860 Presidential Election",
+    title = "Douglas",
     labFormat = labelFormat(suffix = "%",
                             transform = function(x) {x * 100}),
     opacity = 1
   )
 ```
 
-```{r Lincoln_map, include=TRUE}
+```{r, fig.cap="Votes for Abraham Lincoln (Republican Party) in 1860 in Virginia"}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -194,9 +254,9 @@ leaflet(VA_shapes) %>%
               fillOpacity = 1,
               color = "black", weight = 1,
               label = ~county,
-              popup = ~paste0(county, ": ", lincoln, " votes, ", 100 * lincoln_pct, "%")) %>% 
+              popup = ~paste0(county, " County: ", lincoln, " votes, ", 100 * lincoln_pct, "%")) %>% 
   addLegend("bottomright", pal = linc_per_colors, values = VA_data$lincoln_pct,
-    title = "Lincoln votes in Virginia, 1860 Presidential Election",
+    title = "Lincoln",
     labFormat = labelFormat(suffix = "%",
                             transform = function(x) {x * 100}),
     opacity = 1
@@ -205,25 +265,21 @@ leaflet(VA_shapes) %>%
 
 Talk talk talk
 
-```{r stuff, include=TRUE}
-knitr::opts_chunk$set(echo = FALSE)
-
-```
-
 Talky talky talky talky
-```{r correlation, include=TRUE}
+```{r, fig.cap="Correlation Matrix for Reducing Counties. Here we explore the correlation between the vote percentage for the four 1860 Presidential Candidates in Virginia with the percentage of each county which was then enslaved as well as the percentage by which the enslaved population had reduced in the decade prior to the vote."}
 knitr::opts_chunk$set(echo = FALSE)
 
 
 
 VA_vote <- VA_data %>%
   filter(diff_percent < 0 ) %>% 
-  select(percent_slave_1860,
-         diff_percent,
-         bell_pct,
-         breckinridge_pct,
-         douglas_pct,
-         lincoln_pct)
+  mutate(slavery_reduction = diff_percent * -1) %>% 
+  select("% Enslaved" = percent_slave_1860,
+         "Slavery % Reduction" = slavery_reduction,
+         "John Bell %" = bell_pct,
+         "Breckinridge %" = breckinridge_pct,
+         "Douglas %" = douglas_pct,
+         "Lincoln %" = lincoln_pct)
 
 VA_vote.cor = cor(VA_vote)
 
@@ -235,19 +291,19 @@ ggcorrplot(VA_vote.cor, title = "Correlation Matrix for Reducing Counties", lab 
 ```
 
 Talky talky talky talky
-```{r correlation2, include=TRUE}
+```{r, fig.cap="Correlation Matrix for Increasing Counties. As above, but here we look only at counties in which the slave population had increased in the previous decade. The correlation between increased slave populations and vote prefences in 1860 seems slight, perhaps suggesting that in these counties voting was determined more by preexisting partisanship."}
 knitr::opts_chunk$set(echo = FALSE)
 
 
 
 VA_vote <- VA_data %>% 
   filter(diff_percent > 0 ) %>% 
-  select(percent_slave_1860,
-         diff_percent,
-         bell_pct,
-         breckinridge_pct,
-         douglas_pct,
-         lincoln_pct)
+  select("% Enslaved" = percent_slave_1860,
+         "Slavery % Increase" = diff_percent,
+         "John Bell %" = bell_pct,
+         "Breckinridge %" = breckinridge_pct,
+         "Douglas %" = douglas_pct,
+         "Lincoln %" = lincoln_pct)
 
 VA_vote.cor = cor(VA_vote)
 
