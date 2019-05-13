@@ -1,6 +1,6 @@
 # kohler_clio2_project
 
-This project constitutes my final paper for Clio2 in Spring 2019 with Dr. Lincoln Mullen.
+This project constitutes my final paper (Disenfranchised and Depatriated: Slavery, Secession, and the Election of 1860 in Virginia) for Clio2: Computational History in Spring 2019 with Dr. Lincoln Mullen.
 
 All census and election data is in the mapping_files folder, including a .pdf version I found of the 1860 election data which I originally only had in newspaper form.
 
