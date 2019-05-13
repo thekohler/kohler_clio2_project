@@ -1,1 +1,0 @@
-vfp/vfp.csv filter=lfs diff=lfs merge=lfs -text
