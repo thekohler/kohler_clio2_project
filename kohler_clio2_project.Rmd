@@ -3,7 +3,7 @@ title: "Disenfranchised and Depatriated"
 description: |
   Slavery, Secession, and the Election of 1860 in Virginia.
 author:
-  - name: Michael kohler
+  - name: Michael Kohler
     url: http://michaelskohler.com/personal_website/index.html
 date: "`r Sys.Date()`"
 bibliography: clio2_bib.bib
