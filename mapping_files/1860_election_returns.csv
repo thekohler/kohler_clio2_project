@@ -1,4 +1,4 @@
-full_name,county,bell,bell_pct,breckinridge,breckinridge_pct,douglas,douglas_pct,lincoln,lincoln_pct
+full_name,election_county,bell,bell_pct,breckinridge,breckinridge_pct,douglas,douglas_pct,lincoln,lincoln_pct
 ACCOMACK,Accomack County,736,0.47,737,0.47,80,0.05,0,0
 ALBEMARLE,Albemarle County,1317,0.53,1056,0.43,97,0.04,0,0
 ALEXANDRIA,Alexandria County and City,1012,0.63,565,0.35,3,0,14,0.01
@@ -56,12 +56,12 @@ HANCOCK,Hancock County,33,0.05,262,0.41,85,0.13,254,0.4
 HANOVER,Hanover County,575,0.43,749,0.55,27,0.02,0,0
 HARDY,Hardy County,894,0.68,355,0.27,74,0.06,0,0
 HARRISON,Harrison County,931,0.41,1191,0.53,107,0.05,22,0.01
-HENRICO,Henrico County,1403,0.63,641,0.29,189,0.08,0,0
+HENRICO,Henrico County and Richmond City,3805,0.58,1808,0.27,942,0.14,0,0
 HENRY,Henry County,543,0.52,444,0.44,59,0.06,0,0
 HIGHLAND,Highland County,215,0.34,170,0.27,255,0.4,0,0
 ISLE OF WIGHT,Isle of Wight County,147,0.16,757,0.82,19,0.02,0,0
 JACKSON,Jackson County,388,0.4,500,0.51,64,0.07,21,0.02
-JAMES CITY,James City County,148,0.69,60,0.28,5,0.02,0,0
+JAMES CITY,James City County and Williamsburg,197,0.6,103,0.31,29,0.09,0,0
 JEFFERSON,Jefferson County,959,0.52,458,0.25,440,0.24,0,0
 KANAWHA,Kanawha County,1176,0.68,513,0.29,52,0.03,0,0
 KING AND QUEEN,King and Queen County,255,0.33,510,0.66,2,0,0,0
@@ -79,7 +79,7 @@ MARION,Marion County,569,0.28,1337,0.65,137,0.07,1,0.001
 MARSHALL,Marshall County,928,0.45,809,0.4,108,0.05,195,0.1
 MASON,Mason County,716,0.47,439,0.29,297,0.2,59,0.04
 MATHEWS,Mathews County,251,0.45,306,0.55,0,0,0,0
-MCDOWELL,McDowell County,35,0.49,37,0.51,0,0,0,0
+McDOWELL,McDowell County,35,0.49,37,0.51,0,0,0,0
 MECKLENBURG,Mecklenburg County,430,0.31,901,0.65,63,0.05,0,0
 MERCER,Mercer County,443,0.5,432,0.49,13,0.01,0,0
 MIDDLESEX,Middlesex County,151,0.39,241,0.61,0,0,0,0
@@ -91,7 +91,7 @@ NANSEMOND,Nansemond County,477,0.53,429,0.47,1,0,0,0
 NELSON,Nelson County,733,0.59,390,0.32,112,0.09,0,0
 NEW KENT,New Kent County,264,0.6,172,0.39,2,0,0,0
 NICHOLAS,Nicholas County,345,0.63,152,0.28,48,0.09,0,0
-NORFOLK,Norfolk City,982,0.59,439,0.27,233,0.14,0,0
+NORFOLK,"Norfolk County, Norfolk City, & Portsmouth",2364,0.49,1445,0.3,979,0.2,4,0.0008
 NORTHAMPTON,Northampton County,234,0.52,214,0.47,6,0.01,0,0
 NORTHUMBERLAND,Northumberland County,276,0.44,350,0.56,1,0.002,0,0
 NOTTOWAY,Nottoway County,232,0.53,179,0.41,28,0.06,0,0
@@ -106,7 +106,7 @@ POCAHONTAS,Pocahontas County,163,0.31,333,0.63,30,0.06,0,0
 POWHATAN,Powhatan County,225,0.48,127,0.27,120,0.25,0,0
 PRESTON,Preston County,562,0.3,942,0.51,239,0.13,110,0.06
 PRINCE EDWARD,Prince Edward County,374,0.43,423,0.49,65,0.08,0,0
-PRINCE GEORGE,Prince George County,243,0.43,191,0.34,126,0.23,0,0
+PRINCE GEORGE,Prince George County and Petersburg,1213,0.51,414,0.17,739,0.31,0,0
 PRINCESS ANNE,Princess Anne County,451,0.53,379,0.45,16,0.02,0,0
 PRINCE WILLIAM,Prince William County,243,0.23,718,0.69,26,0.03,55,0.05
 PULASKI,Pulaski County,332,0.57,250,0.43,5,0.01,0,0
@@ -114,7 +114,7 @@ PUTNAM,Putnam County,400,0.52,327,0.43,38,0.05,0,0
 RALEIGH,Raleigh County,230,0.73,69,0.22,14,0.04,0,0
 RANDOLPH,Randolph County,259,0.4,248,0.38,143,0.22,0,0
 RAPPAHANNOCK,Rappahannock County,491,0.53,409,0.44,29,0.03,0,0
-RICHMOND,Richmond City,2402,0.56,1167,0.27,753,0.17,0,0
+RICHMOND,Richmond County,353,0.65,185,0.34,6,0.01,0,0
 RITCHIE,Ritchie County,224,0.26,544,0.64,73,0.09,12,0.01
 ROANE,Roane County,237,0.46,264,0.51,16,0.03,0,0
 ROANOKE,Roanoke County,293,0.41,373,0.52,52,0.07,0,0

@@ -1,17 +1,19 @@
 ---
-title: "Kohler Project"
+title: "Disenfranchised and Depatriated"
 description: |
-  A new article created using the Distill format.
+  Slavery, Secession, and the Election of 1860 in Virginia.
 author:
   - name: Michael kohler
     url: http://michaelskohler.com/personal_website/index.html
 date: "`r Sys.Date()`"
-bibliography: bib.bib
+bibliography: clio2_bib.bib
 output: distill::distill_article
+
 ---
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = FALSE)
 
+library(distill)
 library(tidyverse)
 library(dplyr)
 library(leaflet)
@@ -19,14 +21,13 @@ library(USAboundaries)
 library(sf)
 library(corrplot)
 library(ggcorrplot)
-library(distill)
 
 pop_1850 <- read_csv("mapping_files/pop_1850.csv")
 total_1860 <- read_csv("mapping_files/total_1860.csv")
 race_1860 <- read_csv("mapping_files/race_1860.csv")
 election_1860 <- read.csv("mapping_files/1860_election_returns.csv")
 
-
+#Let's merge these into one dataset...
 VA_pop_1850 <- pop_1850 %>% 
   rowwise() %>%
   mutate(total_black = sum( free_black, total_slave, na.rm = TRUE)) %>% 
@@ -58,11 +59,9 @@ VA_pop_1860 <- race_1860 %>%
 
 VA_pop_50_60 <- right_join(VA_pop_1850, VA_pop_1860, by = "county")
 
-counties_va_1860 <- us_counties("1860-06-01", states = "Virginia")
+#Final Pop Data: (all the census stuff merged and labeled)
+#Time to play with the data, too
 
-centroids_va_1860 <- counties_va_1860 %>% 
-    st_centroid()
-  
 VA_pop <- VA_pop_50_60 %>%
   select(county,
          full_name = full_name.y,
@@ -78,75 +77,86 @@ VA_pop <- VA_pop_50_60 %>%
   mutate(diff_percent = round(slave_diff / slave_1850, 3)) %>% 
   mutate(percent_slave_1860 = round(slave_1860 / total_1860, 3)) %>% 
   mutate(percent_slave_1850 = round(slave_1850 / total_1850, 3)) %>%
-  mutate(percent_change = percent_slave_1860 - percent_slave_1850)
+  mutate(percent_change = sum(percent_slave_1860 - percent_slave_1850, na.rm = FALSE)) %>% 
+  mutate(percent_white_1850 = round(white_1850 / total_1850, 3)) %>% 
+  mutate(percent_white_1860 = round(white_1860 / total_1860, 3)) %>%
+  mutate(diff_white = round(white_1860 - white_1850)) %>% 
+  mutate(white_diff_percent = sum(percent_white_1850 - percent_white_1860, 3, na.rm = FALSE))
+  
 
+#Pop data + Election Data. Merged. Created election_county variable in file to make labeling merged districts easier.
 
 VA_data <- VA_pop %>% 
-  left_join(election_1860, by = "full_name") %>% 
-  select(-county.y,
-         county = county.x)
+  left_join(election_1860, by = "full_name")
+
+#Time for shape data
+
+counties_va_1860 <- us_counties("1860-06-01", states = "Virginia")
+
+#some tweaks to county names to make them match up with the census data, mostly eliminating "(extinct)"
+#other tweaks were done directly in the population .csvs, such as "MCDOWELL -> McDOWELL" ¯\_(ツ)_/¯
+#I can't avoid NA counties in the change-over-time maps, but at least I can eliminate them in the 1860 maps
+
+counties_va_1860[26, "full_name"]="ELIZABETH CITY"
+counties_va_1860[60, "full_name"]="NANSEMOND"
+counties_va_1860[63, "full_name"]="NORFOLK"
+counties_va_1860[74, "full_name"]="PRINCESS ANNE"
+counties_va_1860[93, "full_name"]="WARWICK"
+
+centroids_va_1860 <- counties_va_1860 %>% 
+    st_centroid()
+
 
 VA_shapes <- counties_va_1860 %>% 
   left_join(VA_data, by = "full_name")
 
+
+#To keep 0 in the middle on the color scale
 scale_range <- c(1.5, -1.5)
 
+
+#colors! SO MANY COLORS!
 slave_dif_colors <- colorNumeric("RdBu", domain = scale_range)
 slave_per_colors <- colorNumeric(palette = "Purples", domain = VA_data$percent_slave_1860)
 bell_per_colors <- colorNumeric(palette = "Oranges", domain = VA_data$bell_pct)
 breck_per_colors <- colorNumeric(palette = "Greens", domain = VA_data$breckinridge_pct)
 doug_per_colors <- colorNumeric(palette = "Blues", domain = VA_data$douglas_pct)
 linc_per_colors <- colorNumeric(palette = "Reds", domain = VA_data$lincoln_pct)
+white_dif_colors <- colorNumeric(palette = "Greens", domain = VA_data$white_diff_percent)
 ```
 
-  Indeed, soon after Virginia seceded and effectively joined the Confederacy on April 17th, 1861, one of the first actions done by the secessionist government was to send state militia to secure various strategic areas in Northwestern Virginia. On May 3rd the secessionist governorsent militia units to the strategic rail hub of Grafton (now in Taylor County, WV), with other units being sent to secure Charleston and Harper's Ferry, including troops commanded by the soon-to-be-famous Thomas J. Jackson (himself a Northwesterner from what is now Clarksburg, WV).
+In recent decades the historiography of slavery has placed new significance on the domestic slave trade, particularly the interstate trade. Uncovering the horrific scale of this trade has highlighted the fundamentally capitalist nature of antebellum chattel slavery (directly contradicting the “paternalistic” conclusions of earlier scholars, such as Eugene Genovese) and has pushed the historiography into drastically new directions.^[The historiography of the internal slave trade is vast, and growing daily. For a survey of the last few decades of scholarship see Tadman, <i>Speculators and Slaves</i>, Johnson, <i>Soul by Soul</i> and <i>River of Dark Dreams</i>, Baptist, <i>The Half Has Never Been Told</i>, and Deyle, <i>Carry Me Back</i>. It's not an exagerrration to say that much of the recent historiography is, in turn, a response to the dismissal of the importance of the domestic slave trade found in Genovese's <i>Roll Jordan Roll</i>.] Among these is an appreciation for the role the domestic slave trade played both in the continuation of slavery in the former tobacco states of the Chesapeake region (particularly Maryland and Virginia) as well as the role that the slave trade played in the decision by Virginia to join the Deep South in their attempt to secede from the Union after the election of Abraham Lincoln in 1860.
 
+While many at the time of the Revolution thought that the decline of tobacco in the Chesapeake would lead to those states gradually becoming Free States, the cotton boom in the Deep South put an end to the decline of slavery in areas in which it had already been established in Virginia. Having pushed for the end to the international slave trade, partly out of a cynical attempt to limit competition, Upper South would become the primary source of slave labor for the rapidly expanding new states of the Deep South.^[Adam Rothman, <i>Slave Country</i>, 7-8, 29.] Some, such as the sugar plantations of Louisiana, would prove so lethal that they functioned as a constantly hungry market for new slaves. This demand in the Deep South would lead to a nearly steady increase of the price of slaves throughout the antebellum period, with hundreds of thousands of slaves sold “down the river” to the slave markets of the cotton and sugar South. ^[Deyle, <i>Carry Me Back</i>, 4-5.]
+.
+These sales, often of children or young adults, came to be crucial to the economy of the Upper South, with human beings coming to be one of Virginia’s biggest exports during the antebellum period. The rising value in slaves meant that what had been decried as “excess property” just decades before was now a crucial source of capital which was mortgaged and refinanced to remake the economy of Virginia.  As summarized by Edward Baptist, “the 3.2 million people enslaved in the United States had a market value of $1.3 billion in 1850—one-fifth of the nation’s wealth and almost equal to the entire gross national product.”^[Baptist, <i>The Half Has Never Been Told</i>, 182, 352.]
 
+This economic reliance on the value of slaves, itself tied more to the value of a slave in New Orleans than to any local demand in Virginia, would prove to be a major cause in Virginian secession. If the Confederacy successfully seceded then Virginia would be left behind in a United States which, with its new Republican majority, seemed unlikely to allow the legal exportation of slaves across international borders to the new slavocracy to the south. The vast majority of slave value would be wiped out overnight, representing for many Virginia enslavers the vast majority of their personal wealth. ^[Deyle, <i>Carry Me Back</i>, 4-5.]
 
+In addition, recent scholarship such as Keri Leigh Merritt's <i>Masterless Men: Poor Whites and Slavery in the Antebellum South</i> details how fear of the growing dissatisfaction of poor whites in the antebellum South lead directly to the panicked hurry towards secession. The steady rise in the price of slaves put slave ownership further out of budgetary reach for the average white Southerner, building discontent among Southern yeoman class. This, in turn, put new strains on a political system designed to allow the slave owning minority to dominate the non-slave-owning majority in the South.^[Merritt, <i>Masterless Men</i>, 90-91.]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r, fig.cap="Slave Population by County"}
+```{r, fig.cap="Percentage of each Virginia county which was enslaved in 1860. This map readily demonstrates the unequal distribution of the slave population at the time of the 1860 census, just months before the 1860 election and the resulting secession crisis which would ultimately tear Virginia into two states. The differences between counties can be vast, with more than 70% of the population of in counties to the Southwest of Richmond (such as Amelia and Nottoway) enslaved but less than 1% in areas like the Northwestern panhandle."}
 
 leaflet(VA_shapes) %>% 
   addTiles() %>% 
   addPolygons(fillColor = ~slave_per_colors(percent_slave_1860),
               fillOpacity = 1,
               color = "black", weight = 1,
-              label = ~county,
-              popup = ~paste0(county, " County: ", 100 * percent_slave_1860, "% enslaved")) %>% 
+              label = ~paste0(county, " County"),
+              popup = ~paste0(county, " County : ", 100 * percent_slave_1860, "% enslaved")) %>% 
   addLegend("bottomright", pal = slave_per_colors, values = VA_data$percent_slave_1860,
     title = "",
     labFormat = labelFormat(suffix = "%",
                             transform = function(x) {x * 100}),
     opacity = 1
   )
-
-
 ```
 
-```{r, fig.cap="Votes for Lincoln in 1860 in Virginia"}
+The political tensions brought on by slavery were magnified by the undemocratic nature of Virginia’s antebellum government. Only in 1850, after intense political pressure, did Virginia finally eliminate property requirements to voting. Even after these reforms, however, slave owners retained control of the state government through apportionment. While the lower house was to be apportioned on the “white basis”, with all white men finally granted suffrage and apportionment based entirely on the white population, the Virginia Senate would be apportioned on a “mixed basis”, with weight given to the full population in a way which maximize the political power of slaveholders.^[Link, “‘This Bastard New Virginia’”, 37].
+
+Similarly it is to be noted that there was an enormous amount of voter intimidation in Virginia during the 1860 election, something made vastly easier by the continuation of the <i>viva voce</i> method of voting. The extent of this intimidation is immediately apparent when looking at the returns for Abraham Lincoln. Only in a handful of counties did even a single individual dare to cast a ballot for the Republican candidate, with multiple counties showing exactly one voter who was brave enough to publicly do so.^["Official Vote of the State of Virginia," <i>Richmond Enquirer</i>, December 25, 1860, 4.] That so few counties even in Northwestern Virginia registered even a single Republican vote is starkly contrasted with the popularity of Republican meetings and rallies throughout the region earlier in the year. In much of the region Republican ideas such as opposing the expansion of slavery into the territories and criticism of the slave power resonated with poorer Northwesterners who had felt previously alienated from the political process in Virginia. Particularly salient were proposals aimed at reforming Virginia’s unequal tax structure, which then strongly favored slave property over other forms of property.^[Zucconi, “‘Preserve Us From Such Democracy’”, 340-342]
+
+```{r, fig.cap="Votes for Lincoln in 1860 in Virginia. Note that nearly all come from counties which border either the Ohio River or the Potomac River. Similarly, while some counties show only a tiny number of brave souls willing to publicly vote for the Republican ticket, areas like the panhandle, where Republicans could enjoy safety in numbers, saw between 20% and 40% of the vote go to Lincoln. Note also the four votes for Lincoln in Norfolk County, here representing the combined vote totals of Norfolk City, Norfolk County, and Portsmouth City, with the four votes in question all coming from Portsmouth."}
 
 centroids_va_1860 <- counties_va_1860 %>%
   st_centroid()
@@ -164,12 +174,16 @@ pop_scale <- function(x, max_radius = 20) {
 leaflet(VA_points) %>% 
   addTiles() %>% 
   addCircleMarkers(radius = ~pop_scale(lincoln),
-                   label = ~county,
-                   popup = ~paste0(county, " County: ", lincoln, " votes"),
+                   label = ~election_county,
+                   popup = ~paste0(election_county, ": ", lincoln, " votes"),
                    color = "red")
-
 ```
 
+Southern elites, already terrified of the possibility of the possibility of the "Black Republicans" making inroads with the slaveless white underclass in the South, were driven into a near panic by the assault on Harper's Ferry by John Brown. Despite the quick failure of Brown's attempt to create a regional slave uprising, the event represented the sum of all of their fears: white men of modest means making common cause with African-Americans and engaging in violent resistance to slavery and the continued rule by the aristocratic slaveholding elite. The result was a reign of terror in much of the South. Reports and rumors of slave uprisings became common in Southern newspapers, and some cities resulted to drastic measures. Charleston, South Carolina even went so far as to attempt to organize "vigiliance committees" throughout the city with the aim of questioning each male member of the population to ensure their loyalty to the secessionist cause in the coming conflict. Throughout the South local slaveholding elites formed “Minute Men” volunteer groups, which served the dual aim of preparation to put down slave uprisings as well as to monitor local whites whose loyalties to the cause of slavery was deemed suspect.^[Merritt, <i>Masterless Men</i>, 293-295.] 
+
+It was no secret that a good deal of such men could be found in the Northwestern counties past the Blue Ridge. Indeed, soon after Virginia seceded and effectively joined the Confederacy on April 17th, 1861, one of the first actions done by the secessionist government was to send state militia to secure various strategic areas in Northwestern Virginia. On May 3rd, Virginia Governor John Letcher sent militia units to the strategic rail hub of Grafton (now in Taylor County, WV), with other units being sent to secure Charleston and Harper's Ferry, including troops commanded by the soon-to-be-famous Thomas J. Jackson (himself a Northwesterner from what is now Clarksburg, WV).^[Levine, <i>The Fall of the House of Dixie: The Civil War and the Social Revolution That Transformed the South</i>, 74-75.]
+
+The coming bifurcation of Virginia becomes apparent when one sees a map of the state showing which counties lost slave population between the 1850 and 1860 censuses. The shape of what is now West Virginia is almost totally visible, particularly as investigation of the few counties in that region that saw a growth in the slave population show that a small amount of slaves were being added to an a nearly insignificant number. Compare, say, with some of the counties closer to Richmond, where gains or losses of thousands of slaves barely even registers enough to earn the counties a darker shade of red or blue.
 
 ```{r, fig.cap="Change in Slave Population, 1850-1860"}
 knitr::opts_chunk$set(echo = FALSE)
@@ -179,7 +193,7 @@ leaflet(VA_shapes) %>%
   addPolygons(fillColor = ~slave_dif_colors(diff_percent),
               fillOpacity = 1,
               color = "black", weight = 1,
-              label = ~county,
+              label = ~paste0(county, " County"),
               popup = ~paste0(county, " County: ", 100 * diff_percent, "%, a change of ", slave_diff, " slaves")) %>% 
   addLegend("bottomright", pal = slave_dif_colors, values = scale_range,
     title = "",
@@ -188,10 +202,12 @@ leaflet(VA_shapes) %>%
     opacity = 1
   )
 ```
-More stuff.
 
 
-```{r, layout="1-page",fig.cap="Votes for John Bell (Constitutional Union Party) in 1860 in Virginia"}
+The following maps demonstrate the 1860 vote results for each candidate as a percentage of votes cast. The previously mentioned mixed support for Breckenridge and voters’ previously existing partisan biases between the old Whig and Democratic parties means that in many cases it can be difficult to see clear regional patterns between Breckenridge and Bell voters.
+
+
+```{r, layout="1-page",fig.cap="Votes for John Bell (Constitutional Union Party) in 1860 in Virginia. Note that, due to the Census Bureau lumping indpendent cities in with their surrounding county, for all election maps I have done the same to make the data more easily comparable. In all cases this is noted in the rollover text, with Norfolk, Henrico, James City, and Prince George Counties all representing mutiple electoral districts on these maps."}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -199,8 +215,8 @@ leaflet(VA_shapes) %>%
   addPolygons(fillColor = ~bell_per_colors(bell_pct),
               fillOpacity = 1,
               color = "black", weight = 1,
-              label = ~county,
-              popup = ~paste0(county, " County: ", bell, " votes, ", 100 * bell_pct, "%")) %>% 
+              label = ~election_county,
+              popup = ~paste0(election_county, ": ", bell, " votes, ", 100 * bell_pct, "%")) %>% 
   addLegend("bottomright", pal = bell_per_colors, values = VA_data$bell_pct,
     title = "Bell",
     labFormat = labelFormat(suffix = "%",
@@ -209,7 +225,7 @@ leaflet(VA_shapes) %>%
   )
 ```
 
-```{r, fig.cap="Votes for John C. Breckinridge (Southern Democratic Party) in 1860 in Virginia"}
+```{r, fig.cap="Votes for John C. Breckinridge (Southern Democratic Party) in 1860 in Virginia. Note that in many cases there seems to be a reverse correlation between the strength of slavery in a county and support for the 'Southern Rights' candidate, with the Southern Democrats winning large pluralities in several Appalachian counties (a full 80% in Buchanan County) while losing to Bell in some of the most enslaved counties in the state (Nottaway, etc.), though whether this is due to Whig partisans favoring Bell or elite planters in Virginia being fearful of secession and civil war isn't immediatly clear from the data."}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -217,8 +233,8 @@ leaflet(VA_shapes) %>%
   addPolygons(fillColor = ~breck_per_colors(breckinridge_pct),
               fillOpacity = 1,
               color = "black", weight = 1,
-              label = ~county,
-              popup = ~paste0(county, " County: ", breckinridge, " votes, ", 100 * breckinridge_pct, "%")) %>% 
+              label = ~election_county,
+              popup = ~paste0(election_county, ": ", breckinridge, " votes, ", 100 * breckinridge_pct, "%")) %>% 
   addLegend("bottomright", pal = breck_per_colors, values = VA_data$breckinridge_pct,
     title = "Breckinridge",
     labFormat = labelFormat(suffix = "%",
@@ -227,7 +243,7 @@ leaflet(VA_shapes) %>%
   )
 ```
 
-```{r, fig.cap="Votes for Steven A. Douglas (Democratic Party) in 1860 in Virginia"}
+```{r, fig.cap="Votes for Steven A. Douglas (Democratic Party) in 1860 in Virginia. Note Douglas' popularity in border counties and the Shenandoah Valley counties."}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -235,8 +251,8 @@ leaflet(VA_shapes) %>%
   addPolygons(fillColor = ~doug_per_colors(douglas_pct),
               fillOpacity = 1,
               color = "black", weight = 1,
-              label = ~county,
-              popup = ~paste0(county, " County: ", douglas, " votes, ", 100 * douglas_pct, "%")) %>% 
+              label = ~election_county,
+              popup = ~paste0(election_county, ": ", douglas, " votes, ", 100 * douglas_pct, "%")) %>% 
   addLegend("bottomright", pal = doug_per_colors, values = VA_data$douglas_pct,
     title = "Douglas",
     labFormat = labelFormat(suffix = "%",
@@ -245,7 +261,7 @@ leaflet(VA_shapes) %>%
   )
 ```
 
-```{r, fig.cap="Votes for Abraham Lincoln (Republican Party) in 1860 in Virginia"}
+```{r, fig.cap="Votes for Abraham Lincoln (Republican Party) in 1860 in Virginia. Note that in the panhandle county of Hancock County, Lincoln failed to win the plurality by only 8 votes."}
 knitr::opts_chunk$set(echo = FALSE)
 
 leaflet(VA_shapes) %>% 
@@ -253,8 +269,8 @@ leaflet(VA_shapes) %>%
   addPolygons(fillColor = ~linc_per_colors(lincoln_pct),
               fillOpacity = 1,
               color = "black", weight = 1,
-              label = ~county,
-              popup = ~paste0(county, " County: ", lincoln, " votes, ", 100 * lincoln_pct, "%")) %>% 
+              label = ~election_county,
+              popup = ~paste0(election_county, ": ", lincoln, " votes, ", 100 * lincoln_pct, "%")) %>% 
   addLegend("bottomright", pal = linc_per_colors, values = VA_data$lincoln_pct,
     title = "Lincoln",
     labFormat = labelFormat(suffix = "%",
@@ -263,9 +279,8 @@ leaflet(VA_shapes) %>%
   )
 ```
 
-Talk talk talk
+While some correlation between these various numbers (the percentage of the county which is made up of slaves, growth/decline of slave population over time, and election results) can be gained simply by looking at these maps, a formal correlation matrix confirms many of these initial results:
 
-Talky talky talky talky
 ```{r, fig.cap="Correlation Matrix for Reducing Counties. Here we explore the correlation between the vote percentage for the four 1860 Presidential Candidates in Virginia with the percentage of each county which was then enslaved as well as the percentage by which the enslaved population had reduced in the decade prior to the vote."}
 knitr::opts_chunk$set(echo = FALSE)
 
@@ -284,13 +299,12 @@ VA_vote <- VA_data %>%
 VA_vote.cor = cor(VA_vote)
 
 ggcorrplot(VA_vote.cor, title = "Correlation Matrix for Reducing Counties", lab = TRUE)
-
-
-
-
 ```
 
-Talky talky talky talky
+Unsurprisingly, there is a strong correlation between votes for Lincoln or Douglas in a county and the decline of slavery in that county, with a corresponding negative correlation with a high percentage of enslaved and votes for the two Northern candidates. Similarly we see the reverse with the two Southern candidates, with the interesting result that the strength of slavery in a region is correlated more strongly with votes for the Constitutional Unionist Bell then for the Southern Democratic candidate, Breckenridge.
+
+Next we will look at counties in which slavery as a percentage of the popuation was increasing:
+
 ```{r, fig.cap="Correlation Matrix for Increasing Counties. As above, but here we look only at counties in which the slave population had increased in the previous decade. The correlation between increased slave populations and vote prefences in 1860 seems slight, perhaps suggesting that in these counties voting was determined more by preexisting partisanship."}
 knitr::opts_chunk$set(echo = FALSE)
 
@@ -308,11 +322,59 @@ VA_vote <- VA_data %>%
 VA_vote.cor = cor(VA_vote)
 
 ggcorrplot(VA_vote.cor, title = "Correlation Matrix for Increasing Counties", lab = TRUE)
-
-
-
-
 ```
 
+Here correlations seem to be weaker across the board. While that was expected in the case of Lincoln and Douglas voters, who were mostly located in counties in which slavery was weak and/or decreasing, it’s certainly interesting to see the extent to which there is little correlation between the growth of slavery in a county with the choice between Bell and Breckinridge, with neither correlation even reaching past 10% (though again we see Bell slightly more correlated with increase in slavery than Breckinridge). 
 
+There are several possibilities for future analysis with these figures. One approach which could yield interesting results in the correlation matrix would be to find figures for voting in previous elections to see the extent to which the Bell vote directly correlates to the Whig (or, in 1856, the American or “Know-Nothing”) vote, or how the Breckinridge/Douglas vote corresponds to the Democratic vote in 1856 and earlier. In areas where there was shift from the Democratic vote to Bell (or from Whig areas to Breckinridge), how does that correlate to slave population or slave population decline/growth? Similarly interesting would be an analysis of these factors with the votes both for the Virginia Secession Convention as well as the later secession referendum.  There, with the huge amount of voter suppression and intimidation, the goal would be to see how much turnout dropped or changed as the year progressed. These elections, particularly the referendum, were flawed in ways very familiar to anyone who pays attention to voting in modern totalitarian states. Those with known Unionist sympathies were directly threatened with violence, with several in Floyd County who had voted for the Union actually being marched back to the polling place at gunpoint in order to change their votes. Tracking the degree to which vote totals shifted could function as a way to further analyze the degree of voter suppression in Virginia during this period.^[Williams, <i>Bitterly Divided</i>, 41-43.]
 
+<hr>
+<font size ="+2">Bibliography:</font>
+
+Ayers, Edward L. <i>In the Presence of Mine Enemies: The Civil War in the Heart of America, 1859-1863</i>. W. W. Norton & Company, 2004.
+
+Baptist, Edward E. <i>The Half Has Never Been Told: Slavery and the Making of American Capitalism</i>. New York: Basic Books, 2014.
+
+Deyle, Steven. <i>Carry Me Back: The Domestic Slave Trade in American Life</i>. Oxford University Press, USA, 2005.
+
+Freehling, William W. <i>The Road to Disunion, Volume II: Secessionists Triumphant, 1854-1861</i>. Oxford University Press, USA, 2007.
+
+Genovese, Eugene D. <i>Roll, Jordan, Roll: The World the Slaves Made</i>. Vintage, 1976.
+
+Johnson, Walter. <i>River of Dark Dreams: Slavery and Empire in the Cotton Kingdom</i>, 2013.
+
+———. <i>Soul by Soul: Life Inside the Antebellum Slave Market</i>. Harvard University Press, 1999.
+
+Julienne, Marianne E., and Brent Tarter. “The Virginia Ordinance of Secession: A Research Note on Contemporary Copies.” The Virginia Magazine of History and Biography 119, no. 2 (2011): 154–81.
+
+Levine, Bruce. <i>The Fall of the House of Dixie: The Civil War and the Social Revolution That Transformed the South</i>. Random House, 2013.
+
+Link, William A. “‘This Bastard New Virginia’: Slavery, West Virginia Exceptionalism, and the Secession Crisis.” West Virginia History 3, no. 1 (2009): 37–56.
+
+MacKenzie, Scott A. “The Slaveholders’ War: The Secession Crisis in Kanawha County, Western Virginia, 1860-1861.” West Virginia History 4, no. 1 (2010): 33–57.
+
+Mellott, David W., and Mark A. Snell. “War in West Virginia, 1859–1861:: ‘We Are for the West.’” In <i>The Seventh West Virginia Infantry: An Embattled Union Regiment from the Civil War’s Most Divided State. </i>, 1–12. University Press of Kansas, 2019.
+
+Merritt, Keri Leigh. <i>Masterless Men: Poor Whites and Slavery in the Antebellum South</i>. Reprint edition. Cambridge University Press, 2017.
+
+“NHGIS Data Finder.” Accessed May 13, 2019. https://data2.nhgis.org/main.
+
+Pitcaithley, Dwight T., ed. <i>The U.S. Constitution and Secession: A Documentary Anthology of Slavery and White Supremacy</i>. University Press of Kansas, 2018.
+
+Potter, David M. <i>The Impending Crisis: America Before The Civil War, 1848-1861</i>. New edition. Harper Perennial, 1977.
+
+"Official Vote of the State of Virginia in the Presidential Election on the 6th day of November, 1860," <i>Richmond Enquirer</i>, December 25, 1860, 4. Virginia Chronicle: Digital Newspaper Archive.
+
+Robertson, James I. “The Virginia State Convention of 1861.” <i>In Virginia at War, 1861</i>, edited by James I. Robertson and William C. Davis, 1–26. University Press of Kentucky, 2005.
+
+Rothman, Adam. <i>Slave Country: American Expansion and the Origins of the Deep South</i>. Cambridge, Mass.: Harvard University Press, 2005.
+
+Sinha, Manisha. <i>The Counterrevolution of Slavery: Politics and Ideology in Antebellum South Carolina. The University of North Carolina Press, 2000.
+
+Tadman, Michael. <i>Speculators and Slaves: Masters, Traders, and Slaves in the Old South</i>. University of Wisconsin Press, 1989.
+
+“Virginia Convention of 1861 - Civil War Collections - University of Richmond.” Accessed May 12, 2019. https://secession.richmond.edu/.
+
+Williams, David. <i>Bitterly Divided: The South’s Inner Civil War</i>. First Trade Paper Edition. The New Press, 2010.
+
+Zucconi, Adam J. “‘Preserve Us From Such Democracy’: Politics, Slavery, and Political Culture in Antebellum Northwest Virginia, 1850–1861.” The Virginia Magazine of History and Biography 123, no. 4 (2015): 324–54.
